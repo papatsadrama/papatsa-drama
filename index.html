@@ -56,7 +56,7 @@ footer{padding-bottom:75px}
 <a href="#accueil">Accueil</a>
 <a href="#series">Séries</a>
 <a href="#categories">Catégories</a>
-<button class="login" onclick="connexionGoogle()">Connexion avec Google</button>
+<button id="boutonConnexion" class="login" onclick="connexionGoogle()">Connexion avec Google</button>
 </nav>
 </header>
 
@@ -138,6 +138,35 @@ const supabaseClient = window.supabase.createClient(
     alert("Erreur de connexion : " + error.message);
   }
 }
+  async function deconnexion() {
+  const { error } = await supabaseClient.auth.signOut();
+
+  if (error) {
+    alert("Erreur : " + error.message);
+  }
+}
+
+async function afficherUtilisateur() {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  const bouton = document.getElementById("boutonConnexion");
+
+  if (!bouton) return;
+
+  if (user) {
+    const nom = user.user_metadata?.full_name || user.email;
+    bouton.textContent = "Bonjour " + nom + " | Déconnexion";
+    bouton.onclick = deconnexion;
+  } else {
+    bouton.textContent = "Connexion avec Google";
+    bouton.onclick = connexionGoogle;
+  }
+}
+
+supabaseClient.auth.onAuthStateChange(() => {
+  setTimeout(afficherUtilisateur, 0);
+});
+
+afficherUtilisateur();
  function filter(category){
 document.querySelectorAll('.category').forEach(b=>{
 b.classList.toggle('active',b.textContent===category);
