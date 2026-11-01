@@ -119,7 +119,13 @@ footer{padding-bottom:75px}
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-function filter(category){
+const SUPABASE_URL = 'https://nxgiponbckdnapseqyti.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_nmDjeXbTK2OGO56BAzX8gg_6MRCXwl1';
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);function filter(category){
 document.querySelectorAll('.category').forEach(b=>{
 b.classList.toggle('active',b.textContent===category);
 });
