@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101014">
+<title>PAPATSA DRAMA</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101014;color:white;font-family:Arial,sans-serif}
+header{padding:20px 5%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30252b}
+.logo{font-size:25px;font-weight:bold;color:#d6ad65}
+.logo span{color:#fff}
+nav{display:flex;gap:18px;align-items:center}
+nav a{color:#ddd;text-decoration:none;font-size:14px}
+button{cursor:pointer;border:0;border-radius:7px;padding:11px 18px;font-weight:bold}
+.login{background:#8b1835;color:white}
+main{max-width:1150px;margin:auto;padding:25px 5%}
+.hero{min-height:300px;border-radius:15px;padding:35px 25px;display:flex;align-items:end;background:linear-gradient(90deg,#170b12 5%,#170b12cc 50%,transparent),url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1000') center/cover}
+.hero h1{font-size:36px;max-width:480px;margin:10px 0}
+.hero p{color:#ddd;max-width:430px;line-height:1.5}
+.gold{color:#d6ad65}
+.play{background:#d6ad65;color:#171014;margin-top:12px}
+h2{font-size:21px;margin-top:35px}
+.categories{display:flex;gap:10px;flex-wrap:wrap}
+.category{background:#292329;color:white;border:1px solid #4b3942}
+.category.active{background:#8b1835}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:17px}
+.card{background:#1c191e;border-radius:10px;overflow:hidden}
+.poster{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.card-info{padding:12px}
+.card h3{font-size:15px;margin:4px 0 8px}
+.card p{font-size:12px;color:#aaa;margin:0}
+.tag{color:#d6ad65;font-size:11px}
+footer{padding:30px;text-align:center;color:#888;border-top:1px solid #30252b;margin-top:40px}
+.bottom{display:none}
+@media(max-width:650px){
+header{padding:16px}
+nav a{display:none}
+main{padding:18px 15px}
+.hero{min-height:280px;padding:20px}
+.hero h1{font-size:27px}
+.grid{grid-template-columns:repeat(2,1fr);gap:12px}
+.bottom{display:flex;position:fixed;bottom:0;left:0;right:0;background:#1c191e;justify-content:space-around;padding:14px 5px;border-top:1px solid #49343e}
+.bottom a{color:white;text-decoration:none;font-size:12px;text-align:center}
+footer{padding-bottom:75px}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">PAPATSA <span>DRAMA</span></div>
+<nav>
+<a href="#accueil">Accueil</a>
+<a href="#series">Séries</a>
+<a href="#categories">Catégories</a>
+<button class="login" onclick="alert('Espace membre bientôt disponible')">Connexion</button>
+</nav>
+</header>
+
+<main id="accueil">
+<section class="hero">
+<div>
+<div class="gold">BIENVENUE SUR PAPATSA DRAMA</div>
+<h1>Des histoires qui vous font vibrer.</h1>
+<p>Découvrez des mini-séries originales, des romances passionnantes et des histoires pleines de suspense.</p>
+<button class="play" onclick="alert('Nos premiers épisodes arrivent bientôt !')">▶ Découvrir</button>
+</div>
+</section>
+
+<section id="categories">
+<h2>Explorer les catégories</h2>
+<div class="categories">
+<button class="category active" onclick="filter('Toutes')">Toutes</button>
+<button class="category" onclick="filter('Romance')">Romance</button>
+<button class="category" onclick="filter('Thriller')">Thriller</button>
+<button class="category" onclick="filter('Famille')">Famille</button>
+<button class="category" onclick="filter('Fantastique')">Fantastique</button>
+<button class="category" onclick="filter('Vengeance')">Vengeance</button>
+</div>
+</section>
+
+<section id="series">
+<h2>Nos mini-séries</h2>
+<div class="grid" id="catalogue">
+<div class="card" data-category="Romance">
+<img class="poster" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500" alt="Romance">
+<div class="card-info"><div class="tag">ROMANCE · GRATUIT</div><h3>Le secret du milliardaire</h3><p>Une rencontre qui change tout...</p></div>
+</div>
+<div class="card" data-category="Vengeance">
+<img class="poster" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500" alt="Vengeance">
+<div class="card-info"><div class="tag">VENGEANCE</div><h3>Le prix de la trahison</h3><p>Elle revient pour se venger.</p></div>
+</div>
+<div class="card" data-category="Famille">
+<img class="poster" src="https://images.unsplash.com/photo-1511895426328-dc8714191300?w=500" alt="Famille">
+<div class="card-info"><div class="tag">FAMILLE</div><h3>Le destin d'une famille</h3><p>Un secret bouleversant.</p></div>
+</div>
+<div class="card" data-category="Thriller">
+<img class="poster" src="https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=500" alt="Thriller">
+<div class="card-info"><div class="tag">THRILLER</div><h3>La dernière nuit</h3><p>Personne ne dit la vérité.</p></div>
+</div>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="logo">PAPATSA DRAMA</div>
+<p>Des histoires qui vous font vibrer.</p>
+<p>© 2026 PAPATSA DRAMA. Tous droits réservés.</p>
+</footer>
+
+<div class="bottom">
+<a href="#accueil">⌂<br>Accueil</a>
+<a href="#series">▣<br>Séries</a>
+<a href="#categories">☰<br>Catégories</a>
+<a href="#accueil">♙<br>Compte</a>
+</div>
+
+<script>
+function filter(category){
+document.querySelectorAll('.category').forEach(b=>{
+b.classList.toggle('active',b.textContent===category);
+});
+document.querySelectorAll('.card').forEach(card=>{
+card.style.display=category==='Toutes'||card.dataset.category===category?'block':'none';
+});
+}
+</script>
+</body>
+</html>
