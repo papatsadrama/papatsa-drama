@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administration | PAPATSA DRAMA</title>
+<style>
+:root{font-family:Arial,sans-serif;color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f4f5fb}header{background:#171d32;padding:20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}h1{font-size:23px;margin:0;color:#f5c56d}main{max-width:1050px;margin:auto;padding:22px}.panel{background:#192038;padding:20px;border-radius:14px;margin:15px 0;border:1px solid #303b57}input,textarea,select,button{font:inherit;border-radius:8px;padding:11px}input,textarea,select{display:block;width:100%;background:#10182b;border:1px solid #49536d;color:white;margin:8px 0 15px}button{border:0;background:#d6a24d;color:#111827;cursor:pointer;font-weight:700}button:disabled{opacity:.5;cursor:default}.muted{color:#b8c2d8}.danger{background:#a52e44;color:white}.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:200px}.hidden{display:none!important}li{margin:12px 0;padding:12px;background:#10182b;border-radius:9px}a{color:#f5c56d}label{font-weight:bold}small{color:#b8c2d8}#message{white-space:pre-wrap}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<header><h1>🎬 PAPATSA DRAMA · Administration</h1><button id="logout" class="danger hidden">Déconnexion</button></header>
+<main>
+<section class="panel" id="setup"><h2>Configuration initiale</h2><p>Colle ta clé publique Supabase dans la constante <strong>SUPABASE_PUBLIC_KEY</strong> du fichier HTML, puis publie ce fichier sur GitHub. N'utilise jamais une clé secrète.</p></section>
+<section class="panel hidden" id="login"><h2>Connexion administrateur</h2><p>Connecte-toi avec ton compte Google autorisé.</p><button id="google">Se connecter avec Google</button></section>
+<section class="panel hidden" id="denied"><h2>Accès refusé</h2><p>Ce compte Google n'est pas enregistré dans la table <code>admin_users</code>. Connecte-toi avec le compte administrateur prévu.</p></section>
+<section id="dashboard" class="hidden">
+<div class="panel"><h2>Bienvenue <span id="who"></span></h2><p class="muted">Gère tes séries et tes épisodes depuis cette page.</p></div>
+<div class="panel"><h2>➕ Ajouter une série</h2><form id="seriesForm"><label>Titre</label><input id="seriesTitle" required maxlength="150"><label>Description</label><textarea id="seriesDescription" rows="3"></textarea><label>Genre</label><input id="seriesGenre" placeholder="Romance, drame, suspense…"><label>URL de l'affiche</label><input id="seriesImage" type="url" placeholder="https://..."><button type="submit">Enregistrer la série</button></form><small>Les champs disponibles dans ta table Supabase seront vérifiés avant l'enregistrement.</small></div>
+<div class="panel"><h2>📺 Ajouter un épisode</h2><form id="episodeForm"><label>Série</label><select id="episodeSeries" required><option value="">Choisir une série</option></select><label>Numéro de l'épisode</label><input id="episodeNumber" type="number" min="1" required><label>Titre</label><input id="episodeTitle" required><label>URL de la vidéo</label><input id="episodeVideo" type="url" required placeholder="https://..."><label>Durée (secondes)</label><input id="episodeDuration" type="number" min="0" value="0"><label><input type="checkbox" id="episodeFree" style="display:inline;width:auto"> Épisode gratuit</label><br><br><button type="submit">Enregistrer l'épisode</button></form><small>Pour les épisodes premium, ne mets pas de lien vidéo public : un hébergement vidéo protégé sera nécessaire.</small></div>
+<div class="panel"><h2>📚 Mes séries</h2><button id="refresh">Actualiser</button><ul id="seriesList"></ul></div>
+</section>
+<div class="panel"><p id="message" role="status" aria-live="polite" class="muted">Initialisation…</p></div>
+</main>
+<script>
+// Clé publique uniquement. Ne jamais insérer sb_secret_ ou service_role ici.
+const SUPABASE_URL = 'https://nxgiponbckdnapseqyti.supabase.co';
+const SUPABASE_PUBLIC_KEY = 'sb_publishable_nmDjeXbTK2OGO56BAzX8gg_6MRCXwl1';
+const $ = id => document.getElementById(id);
+const show = (id,on=true) => $(id).classList.toggle('hidden',!on);
+const msg = value => $('message').textContent = value;
+let client, currentUser, seriesRows = [];
+const configured = SUPABASE_PUBLIC_KEY.startsWith('sb_publishable_');
+if (!configured) { msg('Ajoute d’abord ta clé publique Supabase dans le fichier admin.html.'); }
+else {
+  show('setup',false);
+  client = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY);
+  client.auth.onAuthStateChange(() => setTimeout(updateSession,0));
+  updateSession();
+}
+async function updateSession(){
+ try {
+  const {data:{user},error} = await client.auth.getUser();
+  if(error && !/session missing/i.test(error.message)) throw error;
+  currentUser=user;
+  show('logout',!!user);show('login',!user);show('denied',false);show('dashboard',false);
+  if(!user){msg('Connecte-toi pour accéder à ton espace.');return;}
+  const {data,error:accessError}=await client.from('admin_users').select('user_id').eq('user_id',user.id).maybeSingle();
+  if(accessError){msg('Vérification administrateur impossible : '+accessError.message+'\nVérifie les droits API et la politique RLS de admin_users.');return;}
+  if(!data){show('denied');msg('Accès administrateur refusé.');return;}
+  show('dashboard');$('who').textContent=user.user_metadata?.full_name || user.email || '';
+  msg('Connexion administrateur confirmée.');await loadSeries();
+ } catch(e){msg('Erreur de connexion : '+e.message);}
+}
+$('google').onclick=async()=>{const {error}=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+window.location.pathname}});if(error)msg(error.message);};
+$('logout').onclick=async()=>{const {error}=await client.auth.signOut();if(error)msg(error.message);else updateSession();};
+$('refresh').onclick=loadSeries;
+async function loadSeries(){
+ const {data,error}=await client.from('series').select('*').order('created_at',{ascending:false});
+ if(error){msg('Impossible de charger les séries : '+error.message);return;}
+ seriesRows=data||[];const ul=$('seriesList');ul.replaceChildren();const select=$('episodeSeries');select.replaceChildren(new Option('Choisir une série',''));
+ for(const row of seriesRows){const li=document.createElement('li');li.textContent=row.title||row.name||'Série sans titre';ul.append(li);select.append(new Option(row.title||row.name||'Série',row.id));}
+ if(!seriesRows.length){const li=document.createElement('li');li.textContent='Aucune série pour le moment.';ul.append(li);}
+}
+$('seriesForm').onsubmit=async e=>{
+ e.preventDefault();const btn=e.target.querySelector('button');btn.disabled=true;
+ try{
+  const payload={title:$('seriesTitle').value.trim(),description:$('seriesDescription').value.trim(),genre:$('seriesGenre').value.trim(),cover_url:$('seriesImage').value.trim()||null};
+  const {error}=await client.from('series').insert(payload);if(error)throw error;
+  e.target.reset();msg('Série enregistrée !');await loadSeries();
+ }catch(err){msg('Erreur lors de l’ajout de la série : '+err.message+'\nIl faudra peut-être adapter les noms des colonnes de ta table series.');}finally{btn.disabled=false;}
+};
+$('episodeForm').onsubmit=async e=>{
+ e.preventDefault();const btn=e.target.querySelector('button');btn.disabled=true;
+ try{
+  const payload={series_id:$('episodeSeries').value,episode_number:Number($('episodeNumber').value),title:$('episodeTitle').value.trim(),video_url:$('episodeVideo').value.trim(),duration_seconds:Number($('episodeDuration').value||0),is_free:$('episodeFree').checked};
+  const {error}=await client.from('episodes').insert(payload);if(error)throw error;
+  e.target.reset();msg('Épisode enregistré !');
+ }catch(err){msg('Erreur lors de l’ajout de l’épisode : '+err.message);}finally{btn.disabled=false;}
+};
+</script>
+</body></html>
