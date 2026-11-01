@@ -28,6 +28,7 @@ h2{font-size:21px;margin-top:35px}
 .category.active{background:#8b1835}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:17px}
 .card{background:#1c191e;border-radius:10px;overflow:hidden}
+.poster-placeholder{width:100%;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#422035,#15131e);color:#d6ad65;font-weight:bold;text-align:center;padding:18px}
 .poster{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
 .card-info{padding:12px}
 .card h3{font-size:15px;margin:4px 0 8px}
@@ -84,24 +85,8 @@ footer{padding-bottom:75px}
 
 <section id="series">
 <h2>Nos mini-séries</h2>
-<div class="grid" id="catalogue">
-<div class="card" data-category="Romance">
-<img class="poster" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500" alt="Romance">
-<div class="card-info"><div class="tag">ROMANCE · GRATUIT</div><h3>Le secret du milliardaire</h3><p>Une rencontre qui change tout...</p></div>
-</div>
-<div class="card" data-category="Vengeance">
-<img class="poster" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500" alt="Vengeance">
-<div class="card-info"><div class="tag">VENGEANCE</div><h3>Le prix de la trahison</h3><p>Elle revient pour se venger.</p></div>
-</div>
-<div class="card" data-category="Famille">
-<img class="poster" src="https://images.unsplash.com/photo-1511895426328-dc8714191300?w=500" alt="Famille">
-<div class="card-info"><div class="tag">FAMILLE</div><h3>Le destin d'une famille</h3><p>Un secret bouleversant.</p></div>
-</div>
-<div class="card" data-category="Thriller">
-<img class="poster" src="https://images.unsplash.com/photo-1519608487953-e999c86e7455?w=500" alt="Thriller">
-<div class="card-info"><div class="tag">THRILLER</div><h3>La dernière nuit</h3><p>Personne ne dit la vérité.</p></div>
-</div>
-</div>
+<div class="grid" id="catalogue" aria-live="polite"></div>
+<p id="messageCatalogue" role="status" style="color:#ddd;line-height:1.5">Chargement des séries…</p>
 </section>
 </main>
 
@@ -167,14 +152,83 @@ supabaseClient.auth.onAuthStateChange(() => {
 });
 
 afficherUtilisateur();
- function filter(category){
-document.querySelectorAll('.category').forEach(b=>{
-b.classList.toggle('active',b.textContent===category);
-});
-document.querySelectorAll('.card').forEach(card=>{
-card.style.display=category==='Toutes'||card.dataset.category===category?'block':'none';
-});
+let seriesChargees = [];
+let categorieActive = 'Toutes';
+
+function filter(category) {
+  categorieActive = category;
+  document.querySelectorAll('.category').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === category);
+  });
+  afficherSeries();
 }
+
+function afficherSeries() {
+  const catalogue = document.getElementById('catalogue');
+  const message = document.getElementById('messageCatalogue');
+  catalogue.replaceChildren();
+  const visibles = seriesChargees.filter(serie =>
+    categorieActive === 'Toutes' || serie.category === categorieActive
+  );
+  message.textContent = visibles.length ? '' :
+    (seriesChargees.length ? 'Aucune série dans cette catégorie pour le moment.' : 'Aucune série publiée pour le moment.');
+
+  visibles.forEach(serie => {
+    const carte = document.createElement('article');
+    carte.className = 'card';
+    carte.dataset.category = serie.category || '';
+    if (serie.poster_url && /^https:\/\//i.test(serie.poster_url)) {
+      const img = document.createElement('img');
+      img.className = 'poster';
+      img.src = serie.poster_url;
+      img.alt = 'Affiche de ' + (serie.title || 'la série');
+      img.loading = 'lazy';
+      img.onerror = () => {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'poster-placeholder';
+        placeholder.textContent = 'PAPATSA DRAMA';
+        img.replaceWith(placeholder);
+      };
+      carte.appendChild(img);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'poster-placeholder';
+      placeholder.textContent = 'PAPATSA DRAMA';
+      carte.appendChild(placeholder);
+    }
+    const info = document.createElement('div');
+    info.className = 'card-info';
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.textContent = (serie.category || 'SÉRIE').toUpperCase();
+    const titre = document.createElement('h3');
+    titre.textContent = serie.title || 'Sans titre';
+    const description = document.createElement('p');
+    description.textContent = serie.description || 'Découvrez cette nouvelle histoire.';
+    info.append(tag, titre, description);
+    carte.appendChild(info);
+    catalogue.appendChild(carte);
+  });
+}
+
+async function chargerSeries() {
+  const message = document.getElementById('messageCatalogue');
+  message.textContent = 'Chargement des séries…';
+  const { data, error } = await supabaseClient
+    .from('series')
+    .select('id,title,description,category,poster_url,published')
+    .eq('published', true);
+  if (error) {
+    console.error('Erreur Supabase lors du chargement des séries :', error);
+    message.textContent = 'Impossible de charger les séries. Vérifie les autorisations de lecture (RLS) de la table series dans Supabase.';
+    return;
+  }
+  seriesChargees = data || [];
+  afficherSeries();
+}
+
+chargerSeries();
+
 </script>
 </body>
 </html>
