@@ -206,7 +206,13 @@ function afficherSeries() {
     const description = document.createElement('p');
     description.textContent = serie.description || 'Découvrez cette nouvelle histoire.';
     info.append(tag, titre, description);
-    carte.appendChild(info);
+    carte.appendChild(info;
+                 
+carte.style.cursor = 'pointer';
+carte.addEventListener('click', () => {
+  window.location.href = 'serie.html?id=' + encodeURIComponent(serie.id);
+});
+      );
     catalogue.appendChild(carte);
   });
 }
