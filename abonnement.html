@@ -187,13 +187,30 @@
 </footer>
 
 <script>
-  function choisir(formule, prix) {
-    alert(
-      "Offre sélectionnée : " + formule +
-      "\nPrix : " + prix.toLocaleString("fr-FR") + " Ar" +
-      "\n\nLe paiement sera disponible prochainement."
-    );
-  }
+
+function choisir(formule, prix) {
+  const montant = prix.toLocaleString("fr-FR");
+
+  const confirmation = confirm(
+    "PAPATSA DRAMA\n\n" +
+    "Abonnement : " + formule + "\n" +
+    "Montant : " + montant + " Ar\n\n" +
+    "Continuer vers les instructions de paiement MVola ?"
+  );
+
+  if (!confirmation) return;
+
+  alert(
+    "PAIEMENT MVOLA\n\n" +
+    "Montant : " + montant + " Ar\n\n" +
+    "Numéro MVola : 038 31 950 65\n" +
+    "Bénéficiaire : Marie Thérèse Donat Rasoanirina\n\n" +
+    "Effectuez votre transfert MVola, puis conservez " +
+    "votre référence de transaction.\n\n" +
+    "Votre abonnement sera activé après vérification du paiement."
+  );
+}
+
 </script>
 
 </body>
