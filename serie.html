@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Épisodes | PAPATSA DRAMA</title>
+  <title>Série | PAPATSA DRAMA</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -15,8 +15,8 @@
     }
     header {
       background: #191923;
-      padding: 20px;
       color: #f4aa62;
+      padding: 20px;
       font-size: 24px;
       font-weight: bold;
     }
@@ -26,15 +26,22 @@
       padding: 25px 16px;
     }
     h1 { color: #f4aa62; }
+    h2 { margin-top: 30px; }
+    a { color: #f4aa62; }
+    .back {
+      display: inline-block;
+      margin-bottom: 20px;
+    }
     .video {
-      position: relative;
       width: 100%;
-      aspect-ratio: 16 / 9;
+      max-width: 420px;
+      aspect-ratio: 9 / 16;
       background: black;
       border-radius: 12px;
       overflow: hidden;
+      margin: 20px auto;
     }
-    iframe {
+    iframe, video {
       width: 100%;
       height: 100%;
       border: 0;
@@ -44,33 +51,196 @@
       padding: 18px;
       margin-top: 15px;
       border-radius: 10px;
+      cursor: pointer;
     }
-    a { color: #f4aa62; }
-    .back { display: inline-block; margin-bottom: 20px; }
+    .episode:hover {
+      background: #38384a;
+    }
+    .episode.active {
+      border: 1px solid #f4aa62;
+    }
+    .episode p { color: #bbb; }
+    .message { color: #ccc; }
   </style>
 </head>
 <body>
   <header>PAPATSA DRAMA</header>
+
   <main>
     <a class="back" href="index.html">← Accueil</a>
-    <h1>UN AMOUR INTERDIT</h1>
-    <p>Une histoire d'amour, de secrets et de révélations.</p>
 
-    <h2>Épisode 1</h2>
-    <div class="video">
-      <iframe
-        src="https://www.youtube.com/embed/hvWS-DP7aUI"
-        title="UN AMOUR INTERDIT - Épisode 1"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen>
-      </iframe>
-    </div>
+    <h1 id="titre">Chargement de la série...</h1>
+    <p id="description"></p>
+
+    <h2 id="episodeTitre">Épisodes</h2>
+    <div id="lecteur" class="video" hidden></div>
 
     <h2>Liste des épisodes</h2>
-    <div class="episode">
-      <strong>Épisode 1 — UN AMOUR INTERDIT</strong>
-      <p>Découvrez le début de l'histoire d'Élise et Alexandre.</p>
-    </div>
+    <p id="message" class="message">Chargement...</p>
+    <div id="episodes"></div>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Reprendre les valeurs de index.html
+   const SUPABASE_URL = 'https://nxgiponbckdnapseqyti.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_nmDjeXbTK2OGO56BAzX8gg_6MRCXwl1';
+
+
+    const client = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const params = new URLSearchParams(location.search);
+    const serieId = params.get("id");
+
+    const titre = document.getElementById("titre");
+    const description = document.getElementById("description");
+    const message = document.getElementById("message");
+    const liste = document.getElementById("episodes");
+    const lecteur = document.getElementById("lecteur");
+    const episodeTitre = document.getElementById("episodeTitre");
+
+    function youtubeId(url) {
+      try {
+        const u = new URL(url);
+        const host = u.hostname.toLowerCase();
+        if (host === "youtu.be" ||
+            host === "www.youtu.be") {
+          return u.pathname.split("/")[1];
+        }
+        if (["youtube.com", "www.youtube.com",
+             "m.youtube.com"].includes(host)) {
+          if (u.pathname === "/watch") {
+            return u.searchParams.get("v");
+          }
+          const parts = u.pathname.split("/");
+          if (["embed", "shorts"].includes(parts[1])) {
+            return parts[2];
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function lireEpisode(episode) {
+      lecteur.replaceChildren();
+      lecteur.hidden = false;
+
+      episodeTitre.textContent =
+        episode.title || "Épisode " + episode.episode_number;
+
+      const url = episode.video_url;
+      if (!url) {
+        lecteur.hidden = true;
+        message.textContent = "Vidéo indisponible.";
+        return;
+      }
+
+      const id = youtubeId(url);
+
+      if (id) {
+        const iframe = document.createElement("iframe");
+        iframe.src =
+          "https://www.youtube-nocookie.com/embed/" +
+          encodeURIComponent(id);
+        iframe.title = episodeTitre.textContent;
+        iframe.allow =
+          "accelerometer; autoplay; encrypted-media; " +
+          "gyroscope; picture-in-picture; web-share";
+        iframe.allowFullscreen = true;
+        lecteur.appendChild(iframe);
+      } else {
+        const video = document.createElement("video");
+        video.src = url;
+        video.controls = true;
+        video.playsInline = true;
+        lecteur.appendChild(video);
+      }
+
+      document.querySelectorAll(".episode")
+        .forEach(el => {
+          el.classList.toggle(
+            "active",
+            el.dataset.id === String(episode.id)
+          );
+        });
+    }
+
+    async function chargerSerie() {
+      if (!serieId) {
+        titre.textContent = "Série introuvable";
+        message.textContent = "Aucun identifiant de série.";
+        return;
+      }
+
+      const { data: serie, error: erreurSerie } =
+        await client
+          .from("series")
+          .select("id,title,description,published")
+          .eq("id", serieId)
+          .eq("published", true)
+          .single();
+
+      if (erreurSerie || !serie) {
+        titre.textContent = "Série indisponible";
+        message.textContent =
+          "Impossible de charger cette série.";
+        return;
+      }
+
+      titre.textContent = serie.title;
+      description.textContent = serie.description || "";
+
+      const { data, error } = await client
+        .from("episodes")
+        .select("id,title,episode_number,video_url,published")
+        .eq("series_id", serieId)
+        .eq("published", true)
+        .order("episode_number", { ascending: true });
+
+      if (error) {
+        message.textContent =
+          "Erreur de chargement des épisodes.";
+        console.error(error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        message.textContent =
+          "Aucun épisode publié pour le moment.";
+        return;
+      }
+
+      message.textContent = "";
+      liste.replaceChildren();
+
+      data.forEach(episode => {
+        const carte = document.createElement("div");
+        carte.className = "episode";
+        carte.dataset.id = episode.id;
+
+        const nom = document.createElement("strong");
+        nom.textContent =
+          episode.title ||
+          "Épisode " + episode.episode_number;
+
+        const info = document.createElement("p");
+        info.textContent =
+          "Épisode " + episode.episode_number;
+
+        carte.append(nom, info);
+        carte.addEventListener("click", () => {
+          lireEpisode(episode);
+        });
+        liste.appendChild(carte);
+      });
+
+      lireEpisode(data[0]);
+    }
+
+    chargerSerie();
+  </script>
 </body>
 </html>
