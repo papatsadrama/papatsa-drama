@@ -186,7 +186,17 @@
   Tous droits réservés.
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+
+const SUPABASE_URL = "https://nxgiponbckdnapseqyti.supabase.co";
+const SUPABASE_KEY = "sb_publishable_nmDjeXbTK2OGO56BAzX8gg_6MRCXwl1";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
 
 function choisir(formule, prix) {
@@ -240,15 +250,50 @@ function choisir(formule, prix) {
   confirmer.style.cssText =
     "padding:12px;background:#ff9475;border:0;border-radius:8px;cursor:pointer";
 
-  confirmer.onclick = function () {
-    if (!reference.value.trim()) {
-      message.textContent = "Veuillez saisir votre référence MVola.";
-      return;
-    }
+  
+confirmer.onclick = async function () {
+  const ref = reference.value.trim();
+
+  if (!ref) {
     message.textContent =
-      "Référence saisie. La demande n'est pas encore envoyée. " +
-      "La vérification du paiement sera disponible prochainement.";
-  };
+      "Veuillez saisir votre référence MVola.";
+    return;
+  }
+
+  const { data: { user }, error: authError } =
+    await supabaseClient.auth.getUser();
+
+  if (authError || !user) {
+    message.textContent =
+      "Veuillez vous connecter avant de continuer.";
+    return;
+  }
+
+  confirmer.disabled = true;
+  message.textContent = "Enregistrement en cours...";
+
+  const { error } = await supabaseClient
+    .from("demandes_abonnement")
+    .insert({
+      user_id: user.id,
+      formule: formule,
+      montant: prix,
+      reference_mvola: ref,
+      statut: "en_attente"
+    });
+
+  if (error) {
+    message.textContent =
+      "Erreur : " + error.message;
+    confirmer.disabled = false;
+    return;
+  }
+
+  message.textContent =
+    "Votre demande a été enregistrée. " +
+    "Nous vérifierons votre paiement MVola.";
+};
+
 
   const fermer = document.createElement("button");
   fermer.textContent = "Fermer";
