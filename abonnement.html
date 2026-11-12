@@ -188,27 +188,78 @@
 
 <script>
 
+
 function choisir(formule, prix) {
   const montant = prix.toLocaleString("fr-FR");
 
-  const confirmation = confirm(
-    "PAPATSA DRAMA\n\n" +
-    "Abonnement : " + formule + "\n" +
-    "Montant : " + montant + " Ar\n\n" +
-    "Continuer vers les instructions de paiement MVola ?"
-  );
+  const fenetre = document.getElementById("paiementMvola");
 
-  if (!confirmation) return;
+  if (fenetre) {
+    fenetre.remove();
+    return choisir(formule, prix);
+  }
 
-  alert(
-    "PAIEMENT MVOLA\n\n" +
-    "Montant : " + montant + " Ar\n\n" +
-    "Numéro MVola : 038 31 950 65\n" +
-    "Bénéficiaire : Marie Thérèse Donat Rasoanirina\n\n" +
-    "Effectuez votre transfert MVola, puis conservez " +
-    "votre référence de transaction.\n\n" +
-    "Votre abonnement sera activé après vérification du paiement."
-  );
+  const modal = document.createElement("div");
+  modal.id = "paiementMvola";
+
+  modal.style.cssText = `
+    position:fixed;inset:0;background:#000b;
+    display:flex;align-items:center;justify-content:center;
+    z-index:9999;padding:15px;
+  `;
+
+  const carte = document.createElement("div");
+  carte.style.cssText = `
+    background:#202b48;color:white;padding:25px;
+    border-radius:18px;max-width:420px;width:100%;
+    text-align:center;font-family:Arial;
+  `;
+
+  const titre = document.createElement("h2");
+  titre.textContent = "Paiement MVola";
+  titre.style.color = "#ff9475";
+
+  const details = document.createElement("p");
+  details.textContent = `Abonnement : ${formule} — ${montant} Ar`;
+
+  const instructions = document.createElement("p");
+  instructions.textContent =
+    "Envoyez votre paiement MVola au 038 31 950 65. " +
+    "Bénéficiaire : Marie Thérèse Donat Rasoanirina.";
+
+  const reference = document.createElement("input");
+  reference.placeholder = "Référence de transaction MVola";
+  reference.style.cssText =
+    "width:100%;padding:12px;margin:15px 0;border-radius:8px;box-sizing:border-box";
+
+  const message = document.createElement("p");
+  message.style.fontSize = "13px";
+
+  const confirmer = document.createElement("button");
+  confirmer.textContent = "J'ai effectué mon paiement";
+  confirmer.style.cssText =
+    "padding:12px;background:#ff9475;border:0;border-radius:8px;cursor:pointer";
+
+  confirmer.onclick = function () {
+    if (!reference.value.trim()) {
+      message.textContent = "Veuillez saisir votre référence MVola.";
+      return;
+    }
+    message.textContent =
+      "Référence saisie. La demande n'est pas encore envoyée. " +
+      "La vérification du paiement sera disponible prochainement.";
+  };
+
+  const fermer = document.createElement("button");
+  fermer.textContent = "Fermer";
+  fermer.style.cssText =
+    "display:block;margin:15px auto;background:transparent;color:white;border:0;cursor:pointer";
+  fermer.onclick = () => modal.remove();
+
+  carte.append(titre, details, instructions, reference, confirmer, message, fermer);
+  modal.appendChild(carte);
+  document.body.appendChild(modal);
+}
 }
 
 </script>
